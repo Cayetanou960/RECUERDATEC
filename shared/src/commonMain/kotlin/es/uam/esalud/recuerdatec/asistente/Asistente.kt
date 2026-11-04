@@ -17,9 +17,10 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.CancellationException
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 
 /** Todo lo que el asistente puede saber del paciente en este momento. */
 data class ContextoAsistente(
@@ -100,9 +101,6 @@ class AsistenteLocal : Asistente {
     }
 }
 
-@Serializable
-private data class PeticionIA(val mensaje: String, val contexto: String)
-
 /**
  * Asistente con IA: envia la pregunta al servidor `backend/servidor.mjs` (la clave de la API
  * vive alli, nunca en la app). Si falla, cae al asistente local.
@@ -126,7 +124,10 @@ class AsistenteRemoto(
                 )
                 appendLine("Recuerdos: " + ctx.recuerdos.joinToString("; ") { "${it.titulo} (${it.persona})" })
             }
-            val cuerpo = JsonApp.encodeToString(PeticionIA.serializer(), PeticionIA(mensaje, resumen))
+            val cuerpo = buildJsonObject {
+                put("mensaje", mensaje)
+                put("contexto", resumen)
+            }.toString()
             val r = http.post(url.trimEnd('/') + "/chat") {
                 contentType(ContentType.Application.Json)
                 setBody(cuerpo)
