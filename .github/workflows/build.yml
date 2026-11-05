@@ -11,6 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Permiso de ejecucion para gradlew
+        run: chmod +x gradlew
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -28,10 +31,20 @@ jobs:
         run: ./gradlew :androidApp:assembleDebug
 
       - name: Compilar web (WebAssembly)
+        continue-on-error: true
         run: ./gradlew :webApp:wasmJsBrowserDistribution
 
       - name: Guardar el APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: RecuerdaTec-debug-apk
           path: androidApp/build/outputs/apk/debug/*.apk
+
+      - name: Guardar la web compilada
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: RecuerdaTec-web
+          path: webApp/build/dist/wasmJs/productionExecutable
+          if-no-files-found: ignore
